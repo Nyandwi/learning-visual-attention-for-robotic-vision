@@ -163,3 +163,73 @@ def eval_epoch(model, dataset, device, metrics= None):
     data = {metric_name: np.average(scores, weights=batch_weights) for metric_name, scores in metric_scores.items()}
 
     return data
+
+
+
+class SaliencyLoss(nn.Module):
+    '''Defines loss functions for the Transalnet model'''
+    def __init__(self):
+        super(SaliencyLoss, self).__init__()
+
+    def forward(self, preds, labels, loss_type='cc'):
+        losses = []
+        if loss_type == 'cc':
+            for i in range(labels.shape[0]): # labels.shape[0] is batch size
+                loss = loss_CC(preds[i],labels[i])
+                losses.append(loss)
+
+        elif loss_type == 'kldiv':
+            for i in range(labels.shape[0]):
+                loss = loss_KLdiv(preds[i],labels[i])
+                losses.append(loss)
+
+        elif loss_type == 'sim':
+            for i in range(labels.shape[0]):
+                loss = loss_similarity(preds[i],labels[i])
+                losses.append(loss)
+
+        elif loss_type == 'nss':
+            for i in range(labels.shape[0]):
+                loss = loss_NSS(preds[i],labels[i])
+                losses.append(loss)
+            
+        return torch.stack(losses).mean(dim=0, keepdim=True)
+        
+        
+def loss_KLdiv(pred_map, gt_map):
+    eps = 2.2204e-16
+    pred_map = pred_map/torch.sum(pred_map)
+    gt_map = gt_map/torch.sum(gt_map)
+    div = torch.sum(torch.mul(gt_map, torch.log(eps + torch.div(gt_map,pred_map+eps))))
+    return div 
+        
+    
+def loss_CC(pred_map,gt_map):
+    gt_map_ = (gt_map - torch.mean(gt_map))
+    pred_map_ = (pred_map - torch.mean(pred_map))
+    cc = torch.sum(torch.mul(gt_map_,pred_map_))/torch.sqrt(torch.sum(torch.mul(gt_map_,gt_map_))*torch.sum(torch.mul(pred_map_,pred_map_)))
+    return cc
+
+
+def loss_similarity(pred_map,gt_map):
+    gt_map = (gt_map - torch.min(gt_map))/(torch.max(gt_map)-torch.min(gt_map))
+    gt_map = gt_map/torch.sum(gt_map)
+    
+    pred_map = (pred_map - torch.min(pred_map))/(torch.max(pred_map)-torch.min(pred_map))
+    pred_map = pred_map/torch.sum(pred_map)
+    
+    diff = torch.min(gt_map,pred_map)
+    score = torch.sum(diff)
+    
+    return score
+    
+    
+def loss_NSS(pred_map,fix_map):
+    '''ground truth here is fixation map'''
+
+    pred_map_ = (pred_map - torch.mean(pred_map))/torch.std(pred_map)
+    mask = fix_map.gt(0)
+    score = torch.mean(torch.masked_select(pred_map_, mask))
+    return score
+
+# Utilities for the transalnet models
