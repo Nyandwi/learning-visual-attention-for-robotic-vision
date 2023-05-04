@@ -10,7 +10,7 @@ architectures, such as ConvNext, a mixture of CNNs and Transformers as feature
 extractors as a way of making the salency map predictions of the DeepGazeIIE
 model more generalizable. This is done with aim of developing a deep learning.
 
-Learn more in [report](https://drive.google.com/drive/u/0/folders/1FlmtSYcd-l7DbgHO7L5uMOwwoQtNbXJE).
+Learn more from the [project report](https://drive.google.com/drive/u/0/folders/1FlmtSYcd-l7DbgHO7L5uMOwwoQtNbXJE).
 
 
 Contributors: Denis Musinguzi, Kevin Sebineza, Jeande Dieu Nyandwi, Muhammed Danso.
